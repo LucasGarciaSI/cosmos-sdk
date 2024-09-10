@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/depinject/appconfig"
-	"cosmossdk.io/x/authz"
 	"cosmossdk.io/x/authz/keeper"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -30,7 +29,6 @@ type ModuleInputs struct {
 
 	Cdc          codec.Codec
 	AddressCodec address.Codec
-	BankKeeper   authz.BankKeeper
 	Registry     cdctypes.InterfaceRegistry
 	Environment  appmodule.Environment
 }
@@ -43,7 +41,7 @@ type ModuleOutputs struct {
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
-	k := keeper.NewKeeper(in.Environment, in.Cdc, in.AddressCodec)
-	m := NewAppModule(in.Cdc, k, in.BankKeeper, in.Registry)
+	k := keeper.NewKeeper(in.Environment, in.Cdc)
+	m := NewAppModule(in.Cdc, k, in.Registry)
 	return ModuleOutputs{AuthzKeeper: k, Module: m}
 }
