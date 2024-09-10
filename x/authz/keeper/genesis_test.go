@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
 	"cosmossdk.io/core/header"
@@ -18,7 +17,7 @@ import (
 	bank "cosmossdk.io/x/bank/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/codec/address"
+	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -52,11 +51,6 @@ func (suite *GenesisTestSuite) SetupTest() {
 
 	suite.encCfg = moduletestutil.MakeTestEncodingConfig(codectestutil.CodecOptions{}, authzmodule.AppModule{})
 
-	// gomock initializations
-	ctrl := gomock.NewController(suite.T())
-	suite.accountKeeper = authztestutil.NewMockAccountKeeper(ctrl)
-	suite.accountKeeper.EXPECT().AddressCodec().Return(address.NewBech32Codec("cosmos")).AnyTimes()
-
 	suite.baseApp = baseapp.NewBaseApp(
 		"authz",
 		log.NewNopLogger(),
@@ -71,7 +65,8 @@ func (suite *GenesisTestSuite) SetupTest() {
 	msr.SetInterfaceRegistry(suite.encCfg.InterfaceRegistry)
 	env := runtime.NewEnvironment(storeService, coretesting.NewNopLogger(), runtime.EnvWithMsgRouterService(msr))
 
-	suite.keeper = keeper.NewKeeper(env, suite.encCfg.Codec, suite.accountKeeper)
+	addrCdc := addresscodec.NewBech32Codec("cosmos")
+	suite.keeper = keeper.NewKeeper(env, suite.encCfg.Codec, addrCdc)
 }
 
 func (suite *GenesisTestSuite) TestImportExportGenesis() {

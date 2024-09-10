@@ -9,17 +9,45 @@ import (
 	types2 "github.com/cometbft/cometbft/api/cometbft/abci/v1"
 	"github.com/stretchr/testify/require"
 
+	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/header"
 	"cosmossdk.io/errors"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
+
+func GenSignedMockTxWithEnv(ctx sdk.Context, env appmodule.Environment, cdc *codec.ProtoCodec, r *rand.Rand, txConfig client.TxConfig, msgs []sdk.Msg, feeAmt sdk.Coins, gas uint64, chainID string, priv ...cryptotypes.PrivKey) (sdk.Tx, error) {
+	resp, err := env.QueryRouterService.Invoke(
+		ctx,
+		&authtypes.QueryAccountRequest{
+			Address: sdk.AccAddress(priv[0].PubKey().Address()).String(),
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	acc := resp.(*authtypes.QueryAccountResponse)
+	err = acc.UnpackInterfaces(cdc)
+	if err != nil {
+		return nil, err
+	}
+
+	baseAcc := acc.Account.GetCachedValue().(sdk.AccountI)
+	accNums := []uint64{baseAcc.GetAccountNumber()}
+	accSeqs := []uint64{baseAcc.GetSequence()}
+
+	return GenSignedMockTx(r, txConfig, msgs, feeAmt, gas, chainID, accNums, accSeqs, priv...)
+}
 
 // GenSignedMockTx generates a signed mock transaction.
 func GenSignedMockTx(r *rand.Rand, txConfig client.TxConfig, msgs []sdk.Msg, feeAmt sdk.Coins, gas uint64, chainID string, accNums, accSeqs []uint64, priv ...cryptotypes.PrivKey) (sdk.Tx, error) {

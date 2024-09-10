@@ -40,27 +40,24 @@ var (
 
 // AppModule implements the sdk.AppModule interface
 type AppModule struct {
-	cdc           codec.Codec
-	keeper        keeper.Keeper
-	accountKeeper authz.AccountKeeper
-	bankKeeper    authz.BankKeeper
-	registry      cdctypes.InterfaceRegistry
+	cdc        codec.Codec
+	keeper     keeper.Keeper
+	bankKeeper authz.BankKeeper
+	registry   cdctypes.InterfaceRegistry
 }
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
-	ak authz.AccountKeeper,
 	bk authz.BankKeeper,
 	registry cdctypes.InterfaceRegistry,
 ) AppModule {
 	return AppModule{
-		cdc:           cdc,
-		keeper:        keeper,
-		accountKeeper: ak,
-		bankKeeper:    bk,
-		registry:      registry,
+		cdc:        cdc,
+		keeper:     keeper,
+		bankKeeper: bk,
+		registry:   registry,
 	}
 }
 
@@ -171,6 +168,6 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	return simulation.WeightedOperations(
 		am.registry,
 		simState.AppParams, simState.Cdc, simState.TxConfig,
-		am.accountKeeper, am.bankKeeper, am.keeper,
+		am.bankKeeper, am.keeper,
 	)
 }

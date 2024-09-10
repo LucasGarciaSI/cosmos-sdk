@@ -53,7 +53,6 @@ func WeightedOperations(
 	appParams simtypes.AppParams,
 	cdc codec.JSONCodec,
 	txGen client.TxConfig,
-	ak authz.AccountKeeper,
 	bk authz.BankKeeper,
 	k keeper.Keeper,
 ) simulation.WeightedOperations {
@@ -80,15 +79,15 @@ func WeightedOperations(
 	return simulation.WeightedOperations{
 		simulation.NewWeightedOperation(
 			weightMsgGrant,
-			SimulateMsgGrant(pCdc, txGen, ak, bk, k),
+			SimulateMsgGrant(pCdc, txGen, bk, k),
 		),
 		simulation.NewWeightedOperation(
 			weightExec,
-			SimulateMsgExec(pCdc, txGen, ak, bk, k, registry),
+			SimulateMsgExec(pCdc, txGen, bk, k, registry),
 		),
 		simulation.NewWeightedOperation(
 			weightRevoke,
-			SimulateMsgRevoke(pCdc, txGen, ak, bk, k),
+			SimulateMsgRevoke(pCdc, txGen, bk, k),
 		),
 	}
 }
@@ -97,9 +96,8 @@ func WeightedOperations(
 func SimulateMsgGrant(
 	cdc *codec.ProtoCodec,
 	txCfg client.TxConfig,
-	ak authz.AccountKeeper,
 	bk authz.BankKeeper,
-	_ keeper.Keeper,
+	k keeper.Keeper,
 ) simtypes.Operation {
 	return func(
 		r *rand.Rand, app simtypes.AppEntrypoint, ctx sdk.Context, accs []simtypes.Account, chainID string,
@@ -111,7 +109,6 @@ func SimulateMsgGrant(
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgGrant, "granter and grantee are same"), nil, nil
 		}
 
-		granterAcc := ak.GetAccount(ctx, granter.Address)
 		spendableCoins := bk.SpendableCoins(ctx, granter.Address)
 		fees, err := simtypes.RandomFees(r, spendableCoins)
 		if err != nil {
@@ -128,13 +125,13 @@ func SimulateMsgGrant(
 		if !t1.Before(ctx.HeaderInfo().Time) {
 			expiration = &t1
 		}
-		randomAuthz := generateRandomAuthorization(r, spendLimit, ak.AddressCodec())
+		randomAuthz := generateRandomAuthorization(r, spendLimit, k.AddressCodec())
 
-		granterAddr, err := ak.AddressCodec().BytesToString(granter.Address)
+		granterAddr, err := k.AddressCodec().BytesToString(granter.Address)
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgGrant, "could not get granter address"), nil, nil
 		}
-		granteeAddr, err := ak.AddressCodec().BytesToString(grantee.Address)
+		granteeAddr, err := k.AddressCodec().BytesToString(grantee.Address)
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgGrant, "could not get grantee address"), nil, nil
 		}
@@ -142,15 +139,16 @@ func SimulateMsgGrant(
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgGrant, err.Error()), nil, err
 		}
-		tx, err := simtestutil.GenSignedMockTx(
+		tx, err := simtestutil.GenSignedMockTxWithEnv(
+			ctx,
+			k.Environment,
+			cdc,
 			r,
 			txCfg,
 			[]sdk.Msg{msg},
 			fees,
 			simtestutil.DefaultGenTxGas,
 			chainID,
-			[]uint64{granterAcc.GetAccountNumber()},
-			[]uint64{granterAcc.GetSequence()},
 			granter.PrivKey,
 		)
 		if err != nil {
@@ -178,7 +176,6 @@ func generateRandomAuthorization(r *rand.Rand, spendLimit sdk.Coins, addressCode
 func SimulateMsgRevoke(
 	cdc *codec.ProtoCodec,
 	txCfg client.TxConfig,
-	ak authz.AccountKeeper,
 	bk authz.BankKeeper,
 	k keeper.Keeper,
 ) simtypes.Operation {
@@ -220,25 +217,25 @@ func SimulateMsgRevoke(
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgRevoke, "authorization error"), nil, err
 		}
 
-		granterStrAddr, err := ak.AddressCodec().BytesToString(granterAddr)
+		granterStrAddr, err := k.AddressCodec().BytesToString(granterAddr)
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgRevoke, "could not get granter address"), nil, nil
 		}
-		granteeStrAddr, err := ak.AddressCodec().BytesToString(granteeAddr)
+		granteeStrAddr, err := k.AddressCodec().BytesToString(granteeAddr)
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgRevoke, "could not get grantee address"), nil, nil
 		}
 		msg := authz.NewMsgRevoke(granterStrAddr, granteeStrAddr, a.MsgTypeURL())
-		account := ak.GetAccount(ctx, granterAddr)
-		tx, err := simtestutil.GenSignedMockTx(
+		tx, err := simtestutil.GenSignedMockTxWithEnv(
+			ctx,
+			k.Environment,
+			cdc,
 			r,
 			txCfg,
 			[]sdk.Msg{&msg},
 			fees,
 			simtestutil.DefaultGenTxGas,
 			chainID,
-			[]uint64{account.GetAccountNumber()},
-			[]uint64{account.GetSequence()},
 			granterAcc.PrivKey,
 		)
 		if err != nil {
@@ -258,7 +255,6 @@ func SimulateMsgRevoke(
 func SimulateMsgExec(
 	cdc *codec.ProtoCodec,
 	txCfg client.TxConfig,
-	ak authz.AccountKeeper,
 	bk authz.BankKeeper,
 	k keeper.Keeper,
 	unpacker gogoprotoany.AnyUnpacker,
@@ -310,11 +306,11 @@ func SimulateMsgExec(
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgExec, err.Error()), nil, nil
 		}
 
-		graStr, err := ak.AddressCodec().BytesToString(granterAddr)
+		graStr, err := k.AddressCodec().BytesToString(granterAddr)
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgExec, err.Error()), nil, err
 		}
-		greStr, err := ak.AddressCodec().BytesToString(granteeAddr)
+		greStr, err := k.AddressCodec().BytesToString(granteeAddr)
 		if err != nil {
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgExec, err.Error()), nil, err
 		}
@@ -342,16 +338,16 @@ func SimulateMsgExec(
 			return simtypes.NoOpMsg(authz.ModuleName, TypeMsgExec, "fee error"), nil, err
 		}
 
-		granteeAcc := ak.GetAccount(ctx, granteeAddr)
-		tx, err := simtestutil.GenSignedMockTx(
+		tx, err := simtestutil.GenSignedMockTxWithEnv(
+			ctx,
+			k.Environment,
+			cdc,
 			r,
 			txCfg,
 			[]sdk.Msg{&msgExec},
 			fees,
 			simtestutil.DefaultGenTxGas,
 			chainID,
-			[]uint64{granteeAcc.GetAccountNumber()},
-			[]uint64{granteeAcc.GetSequence()},
 			grantee.PrivKey,
 		)
 		if err != nil {
