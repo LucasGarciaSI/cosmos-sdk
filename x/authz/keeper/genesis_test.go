@@ -13,7 +13,6 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/authz/keeper"
 	authzmodule "cosmossdk.io/x/authz/module"
-	authztestutil "cosmossdk.io/x/authz/testutil"
 	bank "cosmossdk.io/x/bank/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -36,11 +35,10 @@ var (
 type GenesisTestSuite struct {
 	suite.Suite
 
-	ctx           sdk.Context
-	keeper        keeper.Keeper
-	baseApp       *baseapp.BaseApp
-	accountKeeper *authztestutil.MockAccountKeeper
-	encCfg        moduletestutil.TestEncodingConfig
+	ctx     sdk.Context
+	keeper  keeper.Keeper
+	baseApp *baseapp.BaseApp
+	encCfg  moduletestutil.TestEncodingConfig
 }
 
 func (suite *GenesisTestSuite) SetupTest() {

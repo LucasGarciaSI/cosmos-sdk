@@ -40,16 +40,15 @@ var (
 type TestSuite struct {
 	suite.Suite
 
-	ctx           sdk.Context
-	addrs         []sdk.AccAddress
-	authzKeeper   authzkeeper.Keeper
-	bankKeeper    *authztestutil.MockBankKeeper
-	accountKeeper *authztestutil.MockAccountKeeper
-	baseApp       *baseapp.BaseApp
-	encCfg        moduletestutil.TestEncodingConfig
-	queryClient   authz.QueryClient
-	msgSrvr       authz.MsgServer
-	addrCdc       address.Codec
+	ctx         sdk.Context
+	addrs       []sdk.AccAddress
+	authzKeeper authzkeeper.Keeper
+	bankKeeper  *authztestutil.MockBankKeeper
+	baseApp     *baseapp.BaseApp
+	encCfg      moduletestutil.TestEncodingConfig
+	queryClient authz.QueryClient
+	msgSrvr     authz.MsgServer
+	addrCdc     address.Codec
 }
 
 func (s *TestSuite) SetupTest() {

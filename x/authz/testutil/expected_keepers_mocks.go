@@ -12,43 +12,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockAccountKeeper is a mock of AccountKeeper interface.
-type MockAccountKeeper struct {
-	ctrl     *gomock.Controller
-	recorder *MockAccountKeeperMockRecorder
-}
-
-// MockAccountKeeperMockRecorder is the mock recorder for MockAccountKeeper.
-type MockAccountKeeperMockRecorder struct {
-	mock *MockAccountKeeper
-}
-
-// NewMockAccountKeeper creates a new mock instance.
-func NewMockAccountKeeper(ctrl *gomock.Controller) *MockAccountKeeper {
-	mock := &MockAccountKeeper{ctrl: ctrl}
-	mock.recorder = &MockAccountKeeperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
-	return m.recorder
-}
-
-// GetAccount mocks base method.
-func (m *MockAccountKeeper) GetAccount(ctx context.Context, addr types.AccAddress) types.AccountI {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccount", ctx, addr)
-	ret0, _ := ret[0].(types.AccountI)
-	return ret0
-}
-
-// GetAccount indicates an expected call of GetAccount.
-func (mr *MockAccountKeeperMockRecorder) GetAccount(ctx, addr interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockAccountKeeper)(nil).GetAccount), ctx, addr)
-}
-
 // MockBankKeeper is a mock of BankKeeper interface.
 type MockBankKeeper struct {
 	ctrl     *gomock.Controller
