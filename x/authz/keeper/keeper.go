@@ -519,8 +519,3 @@ func (k Keeper) DequeueAndDeleteExpiredGrants(ctx context.Context, limit int) er
 
 	return nil
 }
-
-// AddressCodec returns the address codec. Only used for testing/simulations.
-func (k Keeper) AddressCodec() address.Codec {
-	return k.addrCdc
-}

@@ -41,7 +41,7 @@ type ModuleOutputs struct {
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
-	k := keeper.NewKeeper(in.Environment, in.Cdc)
+	k := keeper.NewKeeper(in.Environment, in.Cdc, in.AddressCodec)
 	m := NewAppModule(in.Cdc, k, in.Registry)
 	return ModuleOutputs{AuthzKeeper: k, Module: m}
 }
